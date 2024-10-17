@@ -47,6 +47,70 @@ public class PatientController {
                     .body(Collections.singletonMap("error", "An error occurred while retrieving patients"));
         }
     }
+    @GetMapping("/get-patients-by-age")
+    public ResponseEntity<?> getPatientsByAge(@RequestParam String doctorId, int age) {
+        try {
+            List<Patient> patients = patientService.getPatientsByAge(doctorId, age);
+            if (!patients.isEmpty()) {
+                return ResponseEntity.ok(patients);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Collections.singletonMap("error", "No patients found for this doctor"));
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "An error occurred while retrieving patients"));
+        }
+    }
+
+    @GetMapping("/get-patients-by-gender")
+    public ResponseEntity<?> getPatientsByGender(@RequestParam String doctorId, String gender) {
+        try {
+            List<Patient> patients = patientService.getPatientsByGender(doctorId, gender);
+            if (!patients.isEmpty()) {
+                return ResponseEntity.ok(patients);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Collections.singletonMap("error", "No patients found for this doctor"));
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "An error occurred while retrieving patients"));
+        }
+    }
+
+    @GetMapping("/get-patients-by-username")
+    public ResponseEntity<?> getPatientsByUsername(@RequestParam String doctorId, String username) {
+        try {
+            List<Patient> patients = patientService.getPatientsByUsername(doctorId, username);
+            if (!patients.isEmpty()) {
+                return ResponseEntity.ok(patients);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Collections.singletonMap("error", "No patients found for this doctor"));
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "An error occurred while retrieving patients"));
+        }
+    }
+
+
+    @GetMapping("/get-patients-by-type")
+    public ResponseEntity<?> getPatientsByType(@RequestParam String doctorId, String type) {
+        try {
+            List<Patient> patients = patientService.getPatientsByType(doctorId, type);
+            if (!patients.isEmpty()) {
+                return ResponseEntity.ok(patients);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Collections.singletonMap("error", "No patients found for this doctor"));
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "An error occurred while retrieving patients"));
+        }
+    }
 
     @DeleteMapping("/delete-patient")
     public ResponseEntity<?> deletePatient(@RequestParam String documentId) {

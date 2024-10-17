@@ -57,6 +57,65 @@ public class PatientService {
 
         return patients;
     }
+    public List<Patient> getPatientsByAge(String doctorId, int age) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+
+        CollectionReference patientsCollection = dbFirestore.collection("patients");
+        Query query = patientsCollection.whereEqualTo("doctorUsername", doctorId).whereEqualTo("age",age);
+        ApiFuture<QuerySnapshot> querySnapshot = query.get();
+        List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments();
+        List<Patient> patients = new ArrayList<>();
+        for (QueryDocumentSnapshot document : documents) {
+            Patient patient = document.toObject(Patient.class);
+            patients.add(patient);
+        }
+        return patients;
+    }
+
+    public List<Patient> getPatientsByGender(String doctorId, String gender) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+
+        CollectionReference patientsCollection = dbFirestore.collection("patients");
+        Query query = patientsCollection.whereEqualTo("doctorUsername", doctorId).whereEqualTo("gender",gender);
+        ApiFuture<QuerySnapshot> querySnapshot = query.get();
+        List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments();
+        List<Patient> patients = new ArrayList<>();
+        for (QueryDocumentSnapshot document : documents) {
+            Patient patient = document.toObject(Patient.class);
+            patients.add(patient);
+        }
+        return patients;
+    }
+
+    public List<Patient> getPatientsByUsername(String doctorId, String username) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+
+        CollectionReference patientsCollection = dbFirestore.collection("patients");
+        Query query = patientsCollection.whereEqualTo("doctorUsername", doctorId).whereEqualTo("patientUsername",username);
+        ApiFuture<QuerySnapshot> querySnapshot = query.get();
+        List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments();
+        List<Patient> patients = new ArrayList<>();
+        for (QueryDocumentSnapshot document : documents) {
+            Patient patient = document.toObject(Patient.class);
+            patients.add(patient);
+        }
+        return patients;
+    }
+    public List<Patient> getPatientsByType(String doctorId, String type) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+
+        CollectionReference patientsCollection = dbFirestore.collection("patients");
+        Query query = patientsCollection.whereEqualTo("doctorUsername", doctorId).whereEqualTo("type",type);
+        ApiFuture<QuerySnapshot> querySnapshot = query.get();
+        List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments();
+        List<Patient> patients = new ArrayList<>();
+        for (QueryDocumentSnapshot document : documents) {
+            Patient patient = document.toObject(Patient.class);
+            patients.add(patient);
+        }
+        return patients;
+    }
+
 
     public ResponseEntity<?> deletePatient(String documentId) {
         Firestore dbFirestore = FirestoreClient.getFirestore();
