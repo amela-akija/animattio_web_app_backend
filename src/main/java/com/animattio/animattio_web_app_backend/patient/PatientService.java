@@ -41,6 +41,101 @@ public class PatientService {
         return null;
     }
 
+    public void updatePatient(String documentId, Patient updatedPatient) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+
+        String newDocumentId = updatedPatient.getPatientUsername();
+        if (newDocumentId == null || newDocumentId.isEmpty()) {
+            throw new IllegalArgumentException("Patient username cannot be null or empty");
+        }
+
+        DocumentReference oldDocumentReference = dbFirestore.collection("patients").document(documentId);
+        ApiFuture<DocumentSnapshot> future = oldDocumentReference.get();
+        DocumentSnapshot documentSnapshot = future.get();
+
+        if (documentSnapshot.exists()) {
+            DocumentReference newDocumentReference = dbFirestore.collection("patients").document(newDocumentId);
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("patientUsername", newDocumentId);
+            updates.put("doctorUsername", documentSnapshot.getString("doctorUsername"));
+            updates.put("gender", updatedPatient.getGender());
+            updates.put("age", updatedPatient.getAge());
+            updates.put("type", updatedPatient.getType());
+
+            ApiFuture<WriteResult> writeResult = newDocumentReference.set(updates);
+            writeResult.get();
+
+            ApiFuture<QuerySnapshot> usersQuery = dbFirestore.collection("users")
+                    .whereEqualTo("username", documentId).get();
+
+            for (DocumentSnapshot userDoc : usersQuery.get().getDocuments()) {
+                DocumentReference userDocumentReference = dbFirestore.collection("users").document(userDoc.getId());
+                userDocumentReference.update("username", newDocumentId).get();
+            }
+
+            ApiFuture<WriteResult> deleteResult = oldDocumentReference.delete();
+            deleteResult.get();
+        } else {
+            throw new RuntimeException("Patient document not found");
+        }
+    }
+
+
+
+
+
+
+    public String getPatientDocumentIdByUsername(String username) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+
+        CollectionReference usersCollection = dbFirestore.collection("users");
+        Query query = usersCollection.whereEqualTo("username", username).limit(1);
+        ApiFuture<QuerySnapshot> querySnapshot = query.get();
+        List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments();
+
+        if (!documents.isEmpty()) {
+            return documents.get(0).getId();
+        } else {
+            return null;
+        }
+    }
+
+    public Long getPatientAge(String documentId) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        DocumentReference documentReference = dbFirestore.collection("patients").document(documentId);
+        ApiFuture<DocumentSnapshot> future = documentReference.get();
+        DocumentSnapshot documentSnapshot = future.get();
+
+        if (documentSnapshot.exists()) {
+            return documentSnapshot.getLong("age");
+        }
+        return null;
+    }
+
+    public String getPatientGender(String documentId) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        DocumentReference documentReference = dbFirestore.collection("patients").document(documentId);
+        ApiFuture<DocumentSnapshot> future = documentReference.get();
+        DocumentSnapshot documentSnapshot = future.get();
+
+        if (documentSnapshot.exists()) {
+            return documentSnapshot.getString("gender");
+        }
+        return null;
+    }
+    public String getPatientType(String documentId) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        DocumentReference documentReference = dbFirestore.collection("patients").document(documentId);
+        ApiFuture<DocumentSnapshot> future = documentReference.get();
+        DocumentSnapshot documentSnapshot = future.get();
+
+        if (documentSnapshot.exists()) {
+            return documentSnapshot.getString("type");
+        }
+        return null;
+    }
+
+
 
     public List<Patient> getAllPatients(String doctorId) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
