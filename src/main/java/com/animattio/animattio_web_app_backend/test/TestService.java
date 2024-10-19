@@ -20,11 +20,9 @@ public class TestService {
 
         if (documentSnapshot.exists()) {
             Test test = documentSnapshot.toObject(Test.class);
-            System.out.println("Test ID: " + test.getId());
-            System.out.println("Games: " + test.getGames());
             return test;
         }
 
-        return null; // Return null if the document does not exist
+        return null;
     }
 }
