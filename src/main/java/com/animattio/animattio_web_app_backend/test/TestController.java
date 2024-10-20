@@ -8,6 +8,7 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
 import java.util.List;
@@ -48,17 +49,15 @@ public class TestController {
         }
     }
 
-    @GetMapping("/sum-errors/{testId}")
-    public ResponseEntity<Map<String, ?>> sumErrorsForTest(@PathVariable String testId) {
+    @GetMapping("/summed-errors/{userId}")
+    public ResponseEntity<List<Map<String, Object>>> getSummedErrorsForUserTests(@PathVariable String userId) {
         try {
-            Map<String, Object> errorSums = testService.sumErrorsForTest(testId);
-            return ResponseEntity.ok(errorSums);
-        } catch (InterruptedException | ExecutionException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonMap("error", "An error occurred while summing the errors"));
-        } catch (NotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Collections.singletonMap("error", e.getMessage()));
+            List<Map<String, Object>> result = testService.sumErrorsForUserTests(userId);
+            return ResponseEntity.ok(result);
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(null);
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 }

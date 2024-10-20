@@ -47,23 +47,38 @@ public class TestService {
     }
 
 
-    public Map<String, Object> sumErrorsForTest(String testId) throws ExecutionException, InterruptedException {
+    public List<Map<String, Object>> sumErrorsForUserTests(String userId) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
-        DocumentReference testDocRef = dbFirestore.collection("tests").document(testId);
-        ApiFuture<DocumentSnapshot> future = testDocRef.get();
-        DocumentSnapshot testDoc = future.get();
 
-        int totalCommissionErrors = 0;
-        int totalOmissionErrors = 0;
-        Timestamp startDate = null;
-        Timestamp endDate = null;
+        ApiFuture<QuerySnapshot> future = dbFirestore.collection("tests")
+                .whereEqualTo("userId", userId)
+                .get();
 
-        if (testDoc.exists()) {
+        List<QueryDocumentSnapshot> testDocuments = future.get().getDocuments();
+        List<Map<String, Object>> testResults = new ArrayList<>();
+
+        if (testDocuments.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No tests found for the provided user ID: " + userId);
+        }
+
+        ZoneId zoneId = ZoneId.of("UTC+2");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM, yyyy");
+
+        for (DocumentSnapshot testDoc : testDocuments) {
+            Map<String, Object> testResult = new HashMap<>();
+
+            int totalCommissionErrors = 0;
+            int totalOmissionErrors = 0;
+            Timestamp startDate = null;
+            Timestamp endDate = null;
+            String firstGameMode = null;
+
             List<Map<String, Object>> gamesInTest = (List<Map<String, Object>>) testDoc.get("gamesInTest");
 
             if (gamesInTest != null && !gamesInTest.isEmpty()) {
                 startDate = (Timestamp) gamesInTest.get(0).get("timestamp");
                 endDate = (Timestamp) gamesInTest.get(0).get("timestamp");
+                firstGameMode = (String) gamesInTest.get(0).get("mode");
 
                 for (Map<String, Object> game : gamesInTest) {
                     totalCommissionErrors += ((Long) game.get("comissionErrors")).intValue();
@@ -80,26 +95,25 @@ public class TestService {
                     }
                 }
             }
-        } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Test not found for the provided ID: " + testId);
+
+            String formattedStartDate = startDate != null ?
+                    ZonedDateTime.ofInstant(Instant.ofEpochSecond(startDate.getSeconds(), startDate.getNanos()), zoneId).format(formatter) : null;
+            String formattedEndDate = endDate != null ?
+                    ZonedDateTime.ofInstant(Instant.ofEpochSecond(endDate.getSeconds(), endDate.getNanos()), zoneId).format(formatter) : null;
+
+            testResult.put("testId", testDoc.getId());
+            testResult.put("commissions", totalCommissionErrors);
+            testResult.put("omissions", totalOmissionErrors);
+            testResult.put("startDate", formattedStartDate);
+            testResult.put("endDate", formattedEndDate);
+            testResult.put("gameMode", firstGameMode);
+
+            testResults.add(testResult);
         }
 
-        ZoneId zoneId = ZoneId.of("UTC+2");
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM, yyyy");
-
-        String formattedStartDate = startDate != null ?
-                ZonedDateTime.ofInstant(Instant.ofEpochSecond(startDate.getSeconds(), startDate.getNanos()), zoneId).format(formatter) : null;
-        String formattedEndDate = endDate != null ?
-                ZonedDateTime.ofInstant(Instant.ofEpochSecond(endDate.getSeconds(), endDate.getNanos()), zoneId).format(formatter) : null;
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("totalCommissionErrors", totalCommissionErrors);
-        response.put("totalOmissionErrors", totalOmissionErrors);
-        response.put("startDate", formattedStartDate);
-        response.put("endDate", formattedEndDate);
-
-        return response;
+        return testResults;
     }
+
 
 
 
