@@ -7,6 +7,16 @@ import java.util.List;
 public class Test {
     private List<Game> gamesInTest;
 
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    private String userId;
+
     public List<Game> getGamesInTest() {
         return gamesInTest;
     }
