@@ -60,4 +60,16 @@ public class TestController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
+    @GetMapping("/{testId}/processed-games")
+    public ResponseEntity<List<Map<String, Object>>> getProcessedGames(@PathVariable String testId) {
+        try {
+            List<Map<String, Object>> processedGamesData = testService.processTappedImagesForTest(testId);
+            return ResponseEntity.ok(processedGamesData);
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(null);
+        }
+    }
 }

@@ -114,6 +114,102 @@ public class TestService {
         return testResults;
     }
 
+    public Map<String, Object> sumErrorsForTest(String testId) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        DocumentReference testDocRef = dbFirestore.collection("tests").document(testId);
+        ApiFuture<DocumentSnapshot> future = testDocRef.get();
+        DocumentSnapshot testDoc = future.get();
+        int totalCommissionErrors = 0;
+        int totalOmissionErrors = 0;
+        if (testDoc.exists()) {
+            List<Map<String, Object>> gamesInTest = (List<Map<String, Object>>) testDoc.get("gamesInTest");
+            if (gamesInTest != null && !gamesInTest.isEmpty()) {
+
+                for (Map<String, Object> game : gamesInTest) {
+                    totalCommissionErrors += ((Long) game.get("comissionErrors")).intValue();
+                    totalOmissionErrors += ((Long) game.get("omissionErrors")).intValue();
+                }
+            }
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Test not found for the provided ID: " + testId);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("totalCommissionErrors", totalCommissionErrors);
+        response.put("totalOmissionErrors", totalOmissionErrors);
+        return response;
+    }
+
+    public List<Map<String, Object>> processTappedImagesForTest(String testId) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        DocumentReference testDocRef = dbFirestore.collection("tests").document(testId);
+        ApiFuture<DocumentSnapshot> future = testDocRef.get();
+        DocumentSnapshot testDoc = future.get();
+
+        List<Map<String, Object>> allGamesData = new ArrayList<>();
+
+        if (testDoc.exists()) {
+            List<Map<String, Object>> gamesInTest = (List<Map<String, Object>>) testDoc.get("gamesInTest");
+
+            if (gamesInTest != null && !gamesInTest.isEmpty()) {
+                for (Map<String, Object> game : gamesInTest) {
+                    List<Boolean> results = (List<Boolean>) game.get("result");
+                    List<Long> reactionTimes = (List<Long>) game.get("reactionTimes");
+                    List<Long> intervals = (List<Long>) game.get("intervals");
+
+                    List<Map<String, Object>> tappedImagesWithTimes = processGame(results, reactionTimes, intervals);
+
+                    Map<String, Object> gameData = new HashMap<>();
+//                    gameData.put("userId", game.get("id"));
+                    gameData.put("tappedImages", tappedImagesWithTimes);
+
+                    allGamesData.add(gameData);
+                }
+            }
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Test not found for the provided ID: " + testId);
+        }
+
+        return allGamesData;
+    }
+
+    private List<Map<String, Object>> processGame(List<Boolean> result, List<Long> reactionTimes, List<Long> intervals) {
+        List<Map<String, Object>> tappedImagesWithTimes = new ArrayList<>();
+        List<Integer> tappedIndices = new ArrayList<>();
+
+        for (int i = 0; i < result.size(); i++) {
+            if (result.get(i)) {
+                tappedIndices.add(i);
+            }
+        }
+
+        for (int tappedImageCount = 0; tappedImageCount < tappedIndices.size(); tappedImageCount++) {
+            int index = tappedIndices.get(tappedImageCount);
+            Long assignedInterval;
+
+            if (index < 20) {
+                assignedInterval = intervals.get(0);
+            } else if (index < 40) {
+                assignedInterval = intervals.get(1);
+            } else {
+                assignedInterval = intervals.get(2);
+            }
+
+            Map<String, Object> tappedImageData = new HashMap<>();
+            tappedImageData.put("index", index);
+            tappedImageData.put("reactionTime", reactionTimes.get(tappedImageCount));
+            tappedImageData.put("interval", assignedInterval);
+
+            tappedImagesWithTimes.add(tappedImageData);
+        }
+
+        return tappedImagesWithTimes;
+    }
+
+
+
+
+
 
 
 
