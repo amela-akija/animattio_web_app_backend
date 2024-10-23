@@ -1,9 +1,5 @@
 package com.animattio.animattio_web_app_backend.test;
 
-import com.animattio.animattio_web_app_backend.game.Game;
-import com.animattio.animattio_web_app_backend.patient.Patient;
-import com.animattio.animattio_web_app_backend.patient.PatientService;
-import com.google.api.gax.rpc.NotFoundException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -62,9 +58,9 @@ public class TestController {
     }
 
     @GetMapping("/{testId}/processed-games")
-    public ResponseEntity<List<Map<String, Object>>> getProcessedGames(@PathVariable String testId) {
+    public ResponseEntity<Map<String, List<Long>>> getProcessedGames(@PathVariable String testId) {
         try {
-            List<Map<String, Object>> processedGamesData = testService.processTappedImagesForTest(testId);
+            Map<String, List<Long>> processedGamesData = testService.processTappedImagesForTest(testId);
             return ResponseEntity.ok(processedGamesData);
         } catch (ExecutionException | InterruptedException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);

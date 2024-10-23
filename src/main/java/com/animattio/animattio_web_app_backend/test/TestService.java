@@ -121,6 +121,7 @@ public class TestService {
         DocumentSnapshot testDoc = future.get();
         int totalCommissionErrors = 0;
         int totalOmissionErrors = 0;
+        String mode = "";
         if (testDoc.exists()) {
             List<Map<String, Object>> gamesInTest = (List<Map<String, Object>>) testDoc.get("gamesInTest");
             if (gamesInTest != null && !gamesInTest.isEmpty()) {
@@ -140,13 +141,16 @@ public class TestService {
         return response;
     }
 
-    public List<Map<String, Object>> processTappedImagesForTest(String testId) throws ExecutionException, InterruptedException {
+    public Map<String, List<Long>> processTappedImagesForTest(String testId) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
         DocumentReference testDocRef = dbFirestore.collection("tests").document(testId);
         ApiFuture<DocumentSnapshot> future = testDocRef.get();
         DocumentSnapshot testDoc = future.get();
 
-        List<Map<String, Object>> allGamesData = new ArrayList<>();
+        Map<String, List<Long>> groupedData = new HashMap<>();
+        groupedData.put("1250", new ArrayList<>());
+        groupedData.put("2250", new ArrayList<>());
+        groupedData.put("4250", new ArrayList<>());
 
         if (testDoc.exists()) {
             List<Map<String, Object>> gamesInTest = (List<Map<String, Object>>) testDoc.get("gamesInTest");
@@ -157,24 +161,17 @@ public class TestService {
                     List<Long> reactionTimes = (List<Long>) game.get("reactionTimes");
                     List<Long> intervals = (List<Long>) game.get("intervals");
 
-                    List<Map<String, Object>> tappedImagesWithTimes = processGame(results, reactionTimes, intervals);
-
-                    Map<String, Object> gameData = new HashMap<>();
-//                    gameData.put("userId", game.get("id"));
-                    gameData.put("tappedImages", tappedImagesWithTimes);
-
-                    allGamesData.add(gameData);
+                    processGame(results, reactionTimes, intervals, groupedData);
                 }
             }
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Test not found for the provided ID: " + testId);
         }
 
-        return allGamesData;
+        return groupedData;
     }
 
-    private List<Map<String, Object>> processGame(List<Boolean> result, List<Long> reactionTimes, List<Long> intervals) {
-        List<Map<String, Object>> tappedImagesWithTimes = new ArrayList<>();
+    private void processGame(List<Boolean> result, List<Long> reactionTimes, List<Long> intervals, Map<String, List<Long>> groupedData) {
         List<Integer> tappedIndices = new ArrayList<>();
 
         for (int i = 0; i < result.size(); i++) {
@@ -185,6 +182,7 @@ public class TestService {
 
         for (int tappedImageCount = 0; tappedImageCount < tappedIndices.size(); tappedImageCount++) {
             int index = tappedIndices.get(tappedImageCount);
+            Long reactionTime = reactionTimes.get(tappedImageCount);
             Long assignedInterval;
 
             if (index < 20) {
@@ -195,16 +193,11 @@ public class TestService {
                 assignedInterval = intervals.get(2);
             }
 
-            Map<String, Object> tappedImageData = new HashMap<>();
-            tappedImageData.put("index", index);
-            tappedImageData.put("reactionTime", reactionTimes.get(tappedImageCount));
-            tappedImageData.put("interval", assignedInterval);
-
-            tappedImagesWithTimes.add(tappedImageData);
+            groupedData.get(String.valueOf(assignedInterval)).add(reactionTime);
         }
-
-        return tappedImagesWithTimes;
     }
+
+
 
 
 
