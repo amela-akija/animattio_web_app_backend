@@ -42,6 +42,12 @@ public class PatientController {
         } catch (ExecutionException | InterruptedException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonMap("error", "Error updating patient: " + e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
         }
     }
 
@@ -175,5 +181,16 @@ public class PatientController {
     @DeleteMapping("/delete-patient")
     public ResponseEntity<?> deletePatient(@RequestParam String documentId) {
         return patientService.deletePatient(documentId);
+    }
+
+    @GetMapping("/patient-exists")
+    public ResponseEntity<?> checkIfPatientExists(@RequestParam String username) {
+        try {
+            boolean exists = patientService.doesPatientExist(username);
+            return ResponseEntity.ok(Collections.singletonMap("exists", exists));
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "Error checking patient existence: " + e.getMessage()));
+        }
     }
 }

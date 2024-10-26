@@ -54,7 +54,6 @@ public class PatientService {
         DocumentSnapshot documentSnapshot = future.get();
 
         if (documentSnapshot.exists()) {
-            DocumentReference newDocumentReference = dbFirestore.collection("patients").document(newDocumentId);
             Map<String, Object> updates = new HashMap<>();
             updates.put("patientUsername", newDocumentId);
             updates.put("doctorUsername", documentSnapshot.getString("doctorUsername"));
@@ -62,6 +61,7 @@ public class PatientService {
             updates.put("age", updatedPatient.getAge());
             updates.put("type", updatedPatient.getType());
 
+            DocumentReference newDocumentReference = dbFirestore.collection("patients").document(newDocumentId);
             ApiFuture<WriteResult> writeResult = newDocumentReference.set(updates);
             writeResult.get();
 
@@ -73,8 +73,10 @@ public class PatientService {
                 userDocumentReference.update("username", newDocumentId).get();
             }
 
-            ApiFuture<WriteResult> deleteResult = oldDocumentReference.delete();
-            deleteResult.get();
+            if (!documentId.equals(newDocumentId)) {
+                ApiFuture<WriteResult> deleteResult = oldDocumentReference.delete();
+                deleteResult.get();
+            }
         } else {
             throw new RuntimeException("Patient document not found");
         }
@@ -222,4 +224,12 @@ public class PatientService {
                     .body(Collections.singletonMap("error", e.getMessage()));
         }
     }
+
+    public boolean doesPatientExist(String username) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        ApiFuture<DocumentSnapshot> future = dbFirestore.collection("patients").document(username).get();
+        DocumentSnapshot documentSnapshot = future.get();
+        return documentSnapshot.exists();
+    }
+
 }

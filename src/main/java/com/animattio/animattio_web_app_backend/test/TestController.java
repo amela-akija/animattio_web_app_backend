@@ -68,4 +68,29 @@ public class TestController {
             return ResponseEntity.status(e.getStatusCode()).body(null);
         }
     }
+
+    @GetMapping("/{testId}/omissions")
+    public ResponseEntity<Map<String, Object>> getOmissionErrors(@PathVariable String testId) {
+        try {
+            Map<String, Object> response = testService.sumOmisions(testId);
+            return ResponseEntity.ok(response);
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Internal server error"));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getReason()));
+        }
+    }
+
+    @GetMapping("/{testId}/comissions")
+    public ResponseEntity<Map<String, Object>> getCommissionErrors(@PathVariable String testId) {
+        try {
+            Map<String, Object> response = testService.sumCommisions(testId);
+            return ResponseEntity.ok(response);
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Internal server error"));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getReason()));
+        }
+    }
 }
+

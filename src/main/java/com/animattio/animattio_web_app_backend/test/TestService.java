@@ -81,7 +81,7 @@ public class TestService {
                 firstGameMode = (String) gamesInTest.get(0).get("mode");
 
                 for (Map<String, Object> game : gamesInTest) {
-                    totalCommissionErrors += ((Long) game.get("comissionErrors")).intValue();
+                    totalCommissionErrors += ((Long) game.get("commissionErrors")).intValue();
                     totalOmissionErrors += ((Long) game.get("omissionErrors")).intValue();
 
                     Timestamp gameTimestamp = (Timestamp) game.get("timestamp");
@@ -114,21 +114,21 @@ public class TestService {
         return testResults;
     }
 
-    public Map<String, Object> sumErrorsForTest(String testId) throws ExecutionException, InterruptedException {
+    public Map<String, Object> sumCommisions(String testId) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
         DocumentReference testDocRef = dbFirestore.collection("tests").document(testId);
         ApiFuture<DocumentSnapshot> future = testDocRef.get();
         DocumentSnapshot testDoc = future.get();
         int totalCommissionErrors = 0;
-        int totalOmissionErrors = 0;
-        String mode = "";
+//        int totalOmissionErrors = 0;
+//        String mode = "";
         if (testDoc.exists()) {
             List<Map<String, Object>> gamesInTest = (List<Map<String, Object>>) testDoc.get("gamesInTest");
             if (gamesInTest != null && !gamesInTest.isEmpty()) {
 
                 for (Map<String, Object> game : gamesInTest) {
                     totalCommissionErrors += ((Long) game.get("comissionErrors")).intValue();
-                    totalOmissionErrors += ((Long) game.get("omissionErrors")).intValue();
+//                    totalOmissionErrors += ((Long) game.get("omissionErrors")).intValue();
                 }
             }
         } else {
@@ -137,6 +137,33 @@ public class TestService {
 
         Map<String, Object> response = new HashMap<>();
         response.put("totalCommissionErrors", totalCommissionErrors);
+//        response.put("totalOmissionErrors", totalOmissionErrors);
+        return response;
+    }
+
+    public Map<String, Object> sumOmisions(String testId) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        DocumentReference testDocRef = dbFirestore.collection("tests").document(testId);
+        ApiFuture<DocumentSnapshot> future = testDocRef.get();
+        DocumentSnapshot testDoc = future.get();
+//        int totalCommissionErrors = 0;
+        int totalOmissionErrors = 0;
+//        String mode = "";
+        if (testDoc.exists()) {
+            List<Map<String, Object>> gamesInTest = (List<Map<String, Object>>) testDoc.get("gamesInTest");
+            if (gamesInTest != null && !gamesInTest.isEmpty()) {
+
+                for (Map<String, Object> game : gamesInTest) {
+//                    totalCommissionErrors += ((Long) game.get("comissionErrors")).intValue();
+                    totalOmissionErrors += ((Long) game.get("omissionErrors")).intValue();
+                }
+            }
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Test not found for the provided ID: " + testId);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+//        response.put("totalCommissionErrors", totalCommissionErrors);
         response.put("totalOmissionErrors", totalOmissionErrors);
         return response;
     }
