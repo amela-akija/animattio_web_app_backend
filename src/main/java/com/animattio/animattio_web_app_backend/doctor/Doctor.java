@@ -1,11 +1,22 @@
 package com.animattio.animattio_web_app_backend.doctor;
 
-import lombok.Getter;
-import lombok.Setter;
-
-@Setter
-@Getter
 public class Doctor {
-    private String doctorId;
-    private String doctorUsername;
+    private String username;
+    private String role;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
 }
