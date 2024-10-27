@@ -81,7 +81,7 @@ public class TestController {
         }
     }
 
-    @GetMapping("/{testId}/comissions")
+    @GetMapping("/{testId}/commissions")
     public ResponseEntity<Map<String, Object>> getCommissionErrors(@PathVariable String testId) {
         try {
             Map<String, Object> response = testService.sumCommisions(testId);
@@ -90,6 +90,28 @@ public class TestController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Internal server error"));
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getReason()));
+        }
+    }
+    @GetMapping("/{testId}/stimuli-count")
+    public ResponseEntity<Integer> countTotalStimuliOccurrences(@PathVariable String testId) {
+        try {
+            int totalOccurrences = testService.countTotalStimuliOccurrences(testId);
+            return new ResponseEntity<>(totalOccurrences, HttpStatus.OK);
+        } catch (ExecutionException | InterruptedException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (ResponseStatusException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+    @GetMapping("/{testId}/non-stimuli-count")
+    public ResponseEntity<Integer> countNonStimuliOccurrences(@PathVariable String testId) {
+        try {
+            int nonStimuliCount = testService.countNonStimuliOccurrences(testId);
+            return new ResponseEntity<>(nonStimuliCount, HttpStatus.OK);
+        } catch (ExecutionException | InterruptedException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (ResponseStatusException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 }

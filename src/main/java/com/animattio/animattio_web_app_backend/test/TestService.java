@@ -127,7 +127,7 @@ public class TestService {
             if (gamesInTest != null && !gamesInTest.isEmpty()) {
 
                 for (Map<String, Object> game : gamesInTest) {
-                    totalCommissionErrors += ((Long) game.get("comissionErrors")).intValue();
+                    totalCommissionErrors += ((Long) game.get("commissionErrors")).intValue();
 //                    totalOmissionErrors += ((Long) game.get("omissionErrors")).intValue();
                 }
             }
@@ -209,9 +209,18 @@ public class TestService {
 
         for (int tappedImageCount = 0; tappedImageCount < tappedIndices.size(); tappedImageCount++) {
             int index = tappedIndices.get(tappedImageCount);
-            Long reactionTime = reactionTimes.get(tappedImageCount);
-            Long assignedInterval;
 
+            if (tappedImageCount >= reactionTimes.size()) {
+                break;
+            }
+
+            Long reactionTime = reactionTimes.get(tappedImageCount);
+
+            if (intervals.size() < 3) {
+                break;
+            }
+
+            Long assignedInterval;
             if (index < 20) {
                 assignedInterval = intervals.get(0);
             } else if (index < 40) {
@@ -223,9 +232,100 @@ public class TestService {
             groupedData.get(String.valueOf(assignedInterval)).add(reactionTime);
         }
     }
+    public int countTotalStimuliOccurrences(String testId) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        DocumentReference testDocRef = dbFirestore.collection("tests").document(testId);
+        ApiFuture<DocumentSnapshot> future = testDocRef.get();
+        DocumentSnapshot testDoc = future.get();
+
+        if (!testDoc.exists()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Test not found for the provided ID: " + testId);
+        }
+
+        List<Map<String, Object>> gamesInTest = (List<Map<String, Object>>) testDoc.get("gamesInTest");
+
+        if (gamesInTest == null || gamesInTest.isEmpty()) {
+            return 0;
+        }
+
+        String firstGameMode = (String) gamesInTest.get(0).get("mode");
+        int totalCount = 0;
+
+        if ("mode1".equals(firstGameMode)) {
+            for (Map<String, Object> game : gamesInTest) {
+                String stimuli = (String) game.get("stimuli");
+                List<String> shownImages = (List<String>) game.get("shownImages");
+
+                if (shownImages != null && stimuli != null) {
+                    int count = Collections.frequency(shownImages, stimuli);
+                    totalCount += count;
+                }
+            }
+        } else if ("mode2".equals(firstGameMode)) {
+            for (Map<String, Object> game : gamesInTest) {
+                List<String> shownImages = (List<String>) game.get("shownImages");
+                String stimuli = (String) game.get("stimuli");
+
+                if (shownImages != null) {
+                    for (String image : shownImages) {
+                        if (!image.equals(stimuli)) {
+                            totalCount++;
+                        }
+                    }
+                }
+            }
+        }
+
+        return totalCount;
+    }
 
 
+    public int countNonStimuliOccurrences(String testId) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        DocumentReference testDocRef = dbFirestore.collection("tests").document(testId);
+        ApiFuture<DocumentSnapshot> future = testDocRef.get();
+        DocumentSnapshot testDoc = future.get();
 
+        if (!testDoc.exists()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Test not found for the provided ID: " + testId);
+        }
+
+        List<Map<String, Object>> gamesInTest = (List<Map<String, Object>>) testDoc.get("gamesInTest");
+
+        if (gamesInTest == null || gamesInTest.isEmpty()) {
+            return 0;
+        }
+
+        String firstGameMode = (String) gamesInTest.get(0).get("mode");
+        int totalCount = 0;
+
+        if ("mode1".equals(firstGameMode)) {
+            for (Map<String, Object> game : gamesInTest) {
+                List<String> shownImages = (List<String>) game.get("shownImages");
+                String stimuli = (String) game.get("stimuli");
+
+                if (shownImages != null) {
+                    for (String image : shownImages) {
+                        if (!image.equals(stimuli)) {
+                            totalCount++;
+                        }
+                    }
+                }
+            }
+        } else if ("mode2".equals(firstGameMode)) {
+            for (Map<String, Object> game : gamesInTest) {
+                String stimuli = (String) game.get("stimuli");
+                List<String> shownImages = (List<String>) game.get("shownImages");
+
+                if (shownImages != null && stimuli != null) {
+                    int count = Collections.frequency(shownImages, stimuli);
+                    totalCount += count;
+                }
+            }
+        }
+
+        return totalCount;
+    }
 
 
 
@@ -235,3 +335,6 @@ public class TestService {
 
 
 }
+
+
+
