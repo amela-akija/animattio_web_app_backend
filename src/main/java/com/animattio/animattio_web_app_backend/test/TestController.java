@@ -114,5 +114,14 @@ public class TestController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+    @GetMapping("/aggregate-errors-monthly/{userId}")
+    public List<Map<String, Object>> aggregateErrorsByMonthAndMode(@PathVariable String userId) throws ExecutionException, InterruptedException {
+        return testService.aggregateErrorsByMonthAndMode(userId);
+    }
+
+    @GetMapping("/aggregate-errors-daily/{userId}")
+    public List<Map<String, Object>> aggregateErrorsByFullDateAndMode(@PathVariable String userId) throws ExecutionException, InterruptedException {
+        return testService.aggregateErrorsByFullDateAndMode(userId);
+    }
 }
 

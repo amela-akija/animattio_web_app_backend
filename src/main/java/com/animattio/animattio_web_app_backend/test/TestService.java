@@ -326,15 +326,141 @@ public class TestService {
 
         return totalCount;
     }
+    public List<Map<String, Object>> aggregateErrorsByMonthAndMode(String userId) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        ApiFuture<QuerySnapshot> future = dbFirestore.collection("tests")
+                .whereEqualTo("userId", userId)
+                .get();
+
+        List<QueryDocumentSnapshot> testDocuments = future.get().getDocuments();
+        Map<String, Map<String, Map<String, Object>>> monthlyAggregatedResults = new HashMap<>();
+
+        if (testDocuments.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No tests found for the provided user ID: " + userId);
+        }
+
+        ZoneId zoneId = ZoneId.of("UTC+2");
+        DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("MM.yyyy");
+
+        for (DocumentSnapshot testDoc : testDocuments) {
+            List<Map<String, Object>> gamesInTest = (List<Map<String, Object>>) testDoc.get("gamesInTest");
+
+            if (gamesInTest != null && !gamesInTest.isEmpty()) {
+                Map<String, Object> lastGame = gamesInTest.get(gamesInTest.size() - 1);
+                String testMode = (String) lastGame.get("mode");
+
+                int commissionErrors = 0;
+                int omissionErrors = 0;
+                int targetStimuli = 0;
+                int nonTargetStimuli = 0;
+
+                for (Map<String, Object> game : gamesInTest) {
+                    String stimuli = (String) game.get("stimuli");
+                    List<String> shownImages = (List<String>) game.get("shownImages");
+
+                    if (shownImages != null && stimuli != null) {
+                        if ("mode1".equals(testMode)) {
+                            int targetCount = Collections.frequency(shownImages, stimuli);
+                            targetStimuli += targetCount;
+                            nonTargetStimuli += shownImages.size() - targetCount;
+                        } else if ("mode2".equals(testMode)) {
+                            int nonTargetCount = Collections.frequency(shownImages, stimuli);
+                            nonTargetStimuli += nonTargetCount;
+                            targetStimuli += shownImages.size() - nonTargetCount;
+                        }
+                    }
+
+                    commissionErrors += ((Long) game.get("commissionErrors")).intValue();
+                    omissionErrors += ((Long) game.get("omissionErrors")).intValue();
+                }
+
+                Timestamp gameTimestamp = (Timestamp) lastGame.get("timestamp");
+                if (gameTimestamp != null) {
+                    ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochSecond(gameTimestamp.getSeconds(), gameTimestamp.getNanos()), zoneId);
+                    String month = zonedDateTime.format(monthFormatter);
+
+                    Map<String, Map<String, Object>> modeResults = monthlyAggregatedResults.getOrDefault(month, new HashMap<>());
+                    Map<String, Object> monthlyResult = modeResults.getOrDefault(testMode, new HashMap<>());
+
+                    monthlyResult.put("month", month);
+                    monthlyResult.put("mode", testMode);
+                    monthlyResult.put("commissions", (int) monthlyResult.getOrDefault("commissions", 0) + commissionErrors);
+                    monthlyResult.put("omissions", (int) monthlyResult.getOrDefault("omissions", 0) + omissionErrors);
+                    monthlyResult.put("targetStimuli", (int) monthlyResult.getOrDefault("targetStimuli", 0) + targetStimuli);
+                    monthlyResult.put("nonTargetStimuli", (int) monthlyResult.getOrDefault("nonTargetStimuli", 0) + nonTargetStimuli);
+
+                    modeResults.put(testMode, monthlyResult);
+                    monthlyAggregatedResults.put(month, modeResults);
+                }
+            }
+        }
+
+        List<Map<String, Object>> aggregatedResults = new ArrayList<>();
+        for (Map<String, Map<String, Object>> modeResults : monthlyAggregatedResults.values()) {
+            aggregatedResults.addAll(modeResults.values());
+        }
+
+        return aggregatedResults;
+    }
 
 
 
 
+    public List<Map<String, Object>> aggregateErrorsByFullDateAndMode(String userId) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
 
+        ApiFuture<QuerySnapshot> future = dbFirestore.collection("tests")
+                .whereEqualTo("userId", userId)
+                .get();
 
+        List<QueryDocumentSnapshot> testDocuments = future.get().getDocuments();
+        Map<String, Map<String, Map<String, Object>>> dailyAggregatedResults = new HashMap<>();
 
+        if (testDocuments.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No tests found for the provided user ID: " + userId);
+        }
 
+        ZoneId zoneId = ZoneId.of("UTC+2");
+        DateTimeFormatter fullDateFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy");
+
+        for (DocumentSnapshot testDoc : testDocuments) {
+            List<Map<String, Object>> gamesInTest = (List<Map<String, Object>>) testDoc.get("gamesInTest");
+
+            if (gamesInTest != null && !gamesInTest.isEmpty()) {
+                Map<String, Object> lastGame = gamesInTest.get(gamesInTest.size() - 1);
+                String testMode = (String) lastGame.get("mode");
+                int commissionErrors = 0;
+                int omissionErrors = 0;
+
+                for (Map<String, Object> game : gamesInTest) {
+                    commissionErrors += ((Long) game.get("commissionErrors")).intValue();
+                    omissionErrors += ((Long) game.get("omissionErrors")).intValue();
+                }
+
+                Timestamp gameTimestamp = (Timestamp) lastGame.get("timestamp");
+                if (gameTimestamp != null) {
+                    ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochSecond(gameTimestamp.getSeconds(), gameTimestamp.getNanos()), zoneId);
+                    String fullDate = zonedDateTime.format(fullDateFormatter);
+
+                    Map<String, Map<String, Object>> modeResults = dailyAggregatedResults.getOrDefault(fullDate, new HashMap<>());
+                    Map<String, Object> dailyResult = modeResults.getOrDefault(testMode, new HashMap<>());
+
+                    dailyResult.put("date", fullDate);
+                    dailyResult.put("mode", testMode);
+                    dailyResult.put("commissions", (int) dailyResult.getOrDefault("commissions", 0) + commissionErrors);
+                    dailyResult.put("omissions", (int) dailyResult.getOrDefault("omissions", 0) + omissionErrors);
+
+                    modeResults.put(testMode, dailyResult);
+                    dailyAggregatedResults.put(fullDate, modeResults);
+                }
+            }
+        }
+
+        List<Map<String, Object>> aggregatedResults = new ArrayList<>();
+        for (Map<String, Map<String, Object>> modeResults : dailyAggregatedResults.values()) {
+            aggregatedResults.addAll(modeResults.values());
+        }
+
+        return aggregatedResults;
+    }
 }
-
-
-
