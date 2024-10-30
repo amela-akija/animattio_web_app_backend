@@ -408,7 +408,6 @@ public class TestService {
 
     public List<Map<String, Object>> aggregateErrorsByFullDateAndMode(String userId) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
-
         ApiFuture<QuerySnapshot> future = dbFirestore.collection("tests")
                 .whereEqualTo("userId", userId)
                 .get();
@@ -429,17 +428,36 @@ public class TestService {
             if (gamesInTest != null && !gamesInTest.isEmpty()) {
                 Map<String, Object> lastGame = gamesInTest.get(gamesInTest.size() - 1);
                 String testMode = (String) lastGame.get("mode");
+
                 int commissionErrors = 0;
                 int omissionErrors = 0;
+                int targetStimuli = 0;
+                int nonTargetStimuli = 0;
 
                 for (Map<String, Object> game : gamesInTest) {
+                    String stimuli = (String) game.get("stimuli");
+                    List<String> shownImages = (List<String>) game.get("shownImages");
+
+                    if (shownImages != null && stimuli != null) {
+                        if ("mode1".equals(testMode)) {
+                            int targetCount = Collections.frequency(shownImages, stimuli);
+                            targetStimuli += targetCount;
+                            nonTargetStimuli += shownImages.size() - targetCount;
+                        } else if ("mode2".equals(testMode)) {
+                            int nonTargetCount = Collections.frequency(shownImages, stimuli);
+                            nonTargetStimuli += nonTargetCount;
+                            targetStimuli += shownImages.size() - nonTargetCount;
+                        }
+                    }
+
                     commissionErrors += ((Long) game.get("commissionErrors")).intValue();
                     omissionErrors += ((Long) game.get("omissionErrors")).intValue();
                 }
 
                 Timestamp gameTimestamp = (Timestamp) lastGame.get("timestamp");
                 if (gameTimestamp != null) {
-                    ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochSecond(gameTimestamp.getSeconds(), gameTimestamp.getNanos()), zoneId);
+                    ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(
+                            Instant.ofEpochSecond(gameTimestamp.getSeconds(), gameTimestamp.getNanos()), zoneId);
                     String fullDate = zonedDateTime.format(fullDateFormatter);
 
                     Map<String, Map<String, Object>> modeResults = dailyAggregatedResults.getOrDefault(fullDate, new HashMap<>());
@@ -449,6 +467,8 @@ public class TestService {
                     dailyResult.put("mode", testMode);
                     dailyResult.put("commissions", (int) dailyResult.getOrDefault("commissions", 0) + commissionErrors);
                     dailyResult.put("omissions", (int) dailyResult.getOrDefault("omissions", 0) + omissionErrors);
+                    dailyResult.put("targetStimuli", (int) dailyResult.getOrDefault("targetStimuli", 0) + targetStimuli);
+                    dailyResult.put("nonTargetStimuli", (int) dailyResult.getOrDefault("nonTargetStimuli", 0) + nonTargetStimuli);
 
                     modeResults.put(testMode, dailyResult);
                     dailyAggregatedResults.put(fullDate, modeResults);
@@ -463,4 +483,5 @@ public class TestService {
 
         return aggregatedResults;
     }
+
 }
