@@ -481,7 +481,10 @@ public class TestService {
             aggregatedResults.addAll(modeResults.values());
         }
 
+        aggregatedResults.sort(Comparator.comparing(result -> result.get("date").toString()));
+
         return aggregatedResults;
     }
+
 
 }
