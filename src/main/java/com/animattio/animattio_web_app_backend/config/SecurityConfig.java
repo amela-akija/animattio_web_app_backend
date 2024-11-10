@@ -19,8 +19,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityContext(securityContext -> securityContext.requireExplicitSave(false))
-                .authorizeRequests(authorizeRequests ->
+                .cors(cors -> cors.configurationSource(request -> new org.springframework.web.cors.CorsConfiguration().applyPermitDefaultValues()))
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
                                 .requestMatchers("/admin/**").hasRole("admin")
                                 .requestMatchers("/patients/**").hasRole("doctor")

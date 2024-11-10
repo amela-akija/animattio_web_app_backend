@@ -100,6 +100,7 @@ public class PatientController {
     }
 
     @GetMapping("/get-all-patients")
+    @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<?> getAllPatients(@RequestParam String doctorId) {
         try {
             List<Patient> patients = patientService.getAllPatients(doctorId);
