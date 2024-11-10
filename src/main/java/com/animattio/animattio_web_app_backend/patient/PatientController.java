@@ -2,6 +2,7 @@ package com.animattio.animattio_web_app_backend.patient;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -22,7 +23,7 @@ public class PatientController {
     public ResponseEntity<?> createPatient(@RequestBody Patient patient) throws InterruptedException, ExecutionException {
         return patientService.createPatient(patient);
     }
-
+    @PreAuthorize("hasRole('doctor')")
     @GetMapping("/get-patient")
     public ResponseEntity<?> getPatient(@RequestParam String documentId) throws ExecutionException, InterruptedException {
         Patient patient = patientService.getPatient(documentId);
