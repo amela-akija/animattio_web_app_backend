@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 @RestController
+@RequestMapping("/tests")
 public class TestController {
     private final TestService testService;
 

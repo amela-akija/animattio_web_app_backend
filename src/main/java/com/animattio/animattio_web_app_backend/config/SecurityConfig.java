@@ -23,9 +23,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
-                                .requestMatchers("/admin/**").hasRole("admin")
+//                                .requestMatchers("/admin/**").hasRole("admin")
                                 .requestMatchers("/patients/**").hasRole("doctor")
-                                .anyRequest().permitAll()
+                                .requestMatchers("/tests/**").hasRole("doctor")
+                                .requestMatchers("/doctors/create-doctor").hasRole("admin")
+                                .requestMatchers("/doctors/delete-doctor").hasRole("admin")
+                                .requestMatchers("/doctors/get-doctor-list").hasRole("admin")
+                                .requestMatchers("/doctors/get-doctor").permitAll()
+//                                .anyRequest().permitAll()
                 )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
