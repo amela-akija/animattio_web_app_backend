@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/patients")
+@CrossOrigin(origins = "http://localhost:3000")
 public class PatientController {
     private final PatientService patientService;
 
@@ -34,7 +35,7 @@ public class PatientController {
                     .body(Collections.singletonMap("error", "Patient not found"));
         }
     }
-
+    @PreAuthorize("hasRole('doctor')")
     @PutMapping("/update-patient")
     public ResponseEntity<?> updatePatient(@RequestParam String documentId, @RequestBody Patient updatedPatient) {
         try {
