@@ -184,20 +184,37 @@ public class PatientService {
         return patients;
     }
 
-    public List<Patient> getPatientsByUsername(String doctorId, String username) throws ExecutionException, InterruptedException {
+    public List<Patient> getPatientsByUsername(String doctorId, String partialUsername) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
 
         CollectionReference patientsCollection = dbFirestore.collection("patients");
-        Query query = patientsCollection.whereEqualTo("doctorUsername", doctorId).whereEqualTo("patientUsername",username);
-        ApiFuture<QuerySnapshot> querySnapshot = query.get();
-        List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments();
-        List<Patient> patients = new ArrayList<>();
-        for (QueryDocumentSnapshot document : documents) {
-            Patient patient = document.toObject(Patient.class);
-            patients.add(patient);
+
+        Query query = patientsCollection.whereEqualTo("doctorUsername", doctorId);
+
+        if (partialUsername != null && !partialUsername.trim().isEmpty()) {
+            query = query.orderBy("patientUsername")
+                    .startAt(partialUsername)
+                    .endAt(partialUsername + "\uf8ff");
         }
-        return patients;
+
+        ApiFuture<QuerySnapshot> querySnapshot = query.get();
+
+        try {
+            List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments();
+            List<Patient> patients = new ArrayList<>();
+            for (QueryDocumentSnapshot document : documents) {
+                Patient patient = document.toObject(Patient.class);
+                patients.add(patient);
+            }
+            return patients;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch patients: " + e.getMessage(), e);
+        }
     }
+
+
+
+
     public List<Patient> getPatientsByType(String doctorId, String type) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
 
