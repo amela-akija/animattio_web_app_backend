@@ -115,21 +115,28 @@ public class PatientController {
                     .body(Collections.singletonMap("error", "An error occurred while retrieving patients"));
         }
     }
+    @PreAuthorize("hasRole('doctor')")
     @GetMapping("/get-patients-by-age")
-    public ResponseEntity<?> getPatientsByAge(@RequestParam String doctorId, int age) {
+    public ResponseEntity<?> getPatientsByAgeRange(@RequestParam String doctorId,
+                                                   @RequestParam int minAge,
+                                                   @RequestParam int maxAge) {
         try {
-            List<Patient> patients = patientService.getPatientsByAge(doctorId, age);
+            List<Patient> patients = patientService.getPatientsByAge(doctorId, minAge, maxAge);
             if (!patients.isEmpty()) {
                 return ResponseEntity.ok(patients);
             } else {
+                System.out.println("No patients found.");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Collections.singletonMap("error", "No patients found for this doctor"));
+                        .body(Collections.singletonMap("error", "No patients found for this doctor in the given age range"));
             }
         } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonMap("error", "An error occurred while retrieving patients"));
+                    .body(Collections.singletonMap("error", "An error occurred while retrieving patients: " + e.getMessage()));
         }
     }
+
+
 
     @GetMapping("/get-patients-by-gender")
     public ResponseEntity<?> getPatientsByGender(@RequestParam String doctorId, String gender) {
@@ -148,20 +155,24 @@ public class PatientController {
     }
 
     @GetMapping("/get-patients-by-username")
-    public ResponseEntity<?> getPatientsByUsername(@RequestParam String doctorId, String username) {
+    public ResponseEntity<?> getPatientsByUsername(
+            @RequestParam String doctorId,
+            @RequestParam(required = false) String username) {
         try {
             List<Patient> patients = patientService.getPatientsByUsername(doctorId, username);
+
             if (!patients.isEmpty()) {
                 return ResponseEntity.ok(patients);
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Collections.singletonMap("error", "No patients found for this doctor"));
+                        .body(Collections.singletonMap("message", "No patients found for this doctor"));
             }
         } catch (InterruptedException | ExecutionException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonMap("error", "An error occurred while retrieving patients"));
+                    .body(Collections.singletonMap("message", "An error occurred while retrieving patients"));
         }
     }
+
 
 
     @GetMapping("/get-patients-by-type")

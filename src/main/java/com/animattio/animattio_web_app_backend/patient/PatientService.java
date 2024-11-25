@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 @Service
 public class PatientService {
@@ -154,20 +155,27 @@ public class PatientService {
 
         return patients;
     }
-    public List<Patient> getPatientsByAge(String doctorId, int age) throws ExecutionException, InterruptedException {
+    public List<Patient> getPatientsByAge(String doctorId, int minAge, int maxAge) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
 
         CollectionReference patientsCollection = dbFirestore.collection("patients");
-        Query query = patientsCollection.whereEqualTo("doctorUsername", doctorId).whereEqualTo("age",age);
+        Query query = patientsCollection
+                .whereEqualTo("doctorUsername", doctorId)
+                .whereGreaterThanOrEqualTo("age", minAge)
+                .whereLessThanOrEqualTo("age", maxAge);
+
         ApiFuture<QuerySnapshot> querySnapshot = query.get();
         List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments();
         List<Patient> patients = new ArrayList<>();
+
         for (QueryDocumentSnapshot document : documents) {
             Patient patient = document.toObject(Patient.class);
             patients.add(patient);
         }
+
         return patients;
     }
+
 
     public List<Patient> getPatientsByGender(String doctorId, String gender) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
@@ -186,31 +194,51 @@ public class PatientService {
 
     public List<Patient> getPatientsByUsername(String doctorId, String partialUsername) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
-
         CollectionReference patientsCollection = dbFirestore.collection("patients");
 
-        Query query = patientsCollection.whereEqualTo("doctorUsername", doctorId);
+        List<Patient> patients = new ArrayList<>();
 
         if (partialUsername != null && !partialUsername.trim().isEmpty()) {
-            query = query.orderBy("patientUsername")
-                    .startAt(partialUsername)
-                    .endAt(partialUsername + "\uf8ff");
+            String lowercaseFirst = partialUsername.substring(0, 1).toLowerCase() + partialUsername.substring(1);
+            String uppercaseFirst = partialUsername.substring(0, 1).toUpperCase() + partialUsername.substring(1);
+
+//            Query query1 = patientsCollection.whereEqualTo("doctorUsername", doctorId)
+//                    .orderBy("patientUsername")
+//                    .startAt(partialUsername)
+//                    .endAt(partialUsername + "\uf8ff");
+
+            Query query2 = patientsCollection.whereEqualTo("doctorUsername", doctorId)
+                    .orderBy("patientUsername")
+                    .startAt(lowercaseFirst)
+                    .endAt(lowercaseFirst + "\uf8ff");
+
+            Query query3 = patientsCollection.whereEqualTo("doctorUsername", doctorId)
+                    .orderBy("patientUsername")
+                    .startAt(uppercaseFirst)
+                    .endAt(uppercaseFirst + "\uf8ff");
+
+//            patients.addAll(fetchPatientsFromQuery(query1));
+            patients.addAll(fetchPatientsFromQuery(query2));
+            patients.addAll(fetchPatientsFromQuery(query3));
+
+            patients = patients.stream().distinct().collect(Collectors.toList());
+        } else {
+            Query query = patientsCollection.whereEqualTo("doctorUsername", doctorId);
+            patients = fetchPatientsFromQuery(query);
         }
 
-        ApiFuture<QuerySnapshot> querySnapshot = query.get();
-
-        try {
-            List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments();
-            List<Patient> patients = new ArrayList<>();
-            for (QueryDocumentSnapshot document : documents) {
-                Patient patient = document.toObject(Patient.class);
-                patients.add(patient);
-            }
-            return patients;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch patients: " + e.getMessage(), e);
-        }
+        return patients;
     }
+
+    private List<Patient> fetchPatientsFromQuery(Query query) throws ExecutionException, InterruptedException {
+        ApiFuture<QuerySnapshot> querySnapshot = query.get();
+        List<Patient> patients = new ArrayList<>();
+        for (QueryDocumentSnapshot document : querySnapshot.get().getDocuments()) {
+            patients.add(document.toObject(Patient.class));
+        }
+        return patients;
+    }
+
 
 
 
