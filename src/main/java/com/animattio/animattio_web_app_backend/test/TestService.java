@@ -339,6 +339,7 @@ public class TestService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No tests found for the provided user ID: " + userId);
         }
 
+        int numberOfTests = testDocuments.size();
         ZoneId zoneId = ZoneId.of("UTC+2");
         DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("MM.yyyy");
 
@@ -351,25 +352,8 @@ public class TestService {
 
                 int commissionErrors = 0;
                 int omissionErrors = 0;
-                int targetStimuli = 0;
-                int nonTargetStimuli = 0;
 
                 for (Map<String, Object> game : gamesInTest) {
-                    String stimuli = (String) game.get("stimuli");
-                    List<String> shownImages = (List<String>) game.get("shownImages");
-
-                    if (shownImages != null && stimuli != null) {
-                        if ("mode1".equals(testMode)) {
-                            int targetCount = Collections.frequency(shownImages, stimuli);
-                            targetStimuli += targetCount;
-                            nonTargetStimuli += shownImages.size() - targetCount;
-                        } else if ("mode2".equals(testMode)) {
-                            int nonTargetCount = Collections.frequency(shownImages, stimuli);
-                            nonTargetStimuli += nonTargetCount;
-                            targetStimuli += shownImages.size() - nonTargetCount;
-                        }
-                    }
-
                     commissionErrors += ((Long) game.get("commissionErrors")).intValue();
                     omissionErrors += ((Long) game.get("omissionErrors")).intValue();
                 }
@@ -386,8 +370,14 @@ public class TestService {
                     monthlyResult.put("mode", testMode);
                     monthlyResult.put("commissions", (int) monthlyResult.getOrDefault("commissions", 0) + commissionErrors);
                     monthlyResult.put("omissions", (int) monthlyResult.getOrDefault("omissions", 0) + omissionErrors);
-                    monthlyResult.put("targetStimuli", (int) monthlyResult.getOrDefault("targetStimuli", 0) + targetStimuli);
-                    monthlyResult.put("nonTargetStimuli", (int) monthlyResult.getOrDefault("nonTargetStimuli", 0) + nonTargetStimuli);
+
+                    if ("mode1".equals(testMode)) {
+                        monthlyResult.put("targetStimuli", 36 * numberOfTests);
+                        monthlyResult.put("nonTargetStimuli", 324 * numberOfTests);
+                    } else if ("mode2".equals(testMode)) {
+                        monthlyResult.put("targetStimuli", 324 * numberOfTests);
+                        monthlyResult.put("nonTargetStimuli", 36 * numberOfTests);
+                    }
 
                     modeResults.put(testMode, monthlyResult);
                     monthlyAggregatedResults.put(month, modeResults);
@@ -405,7 +395,6 @@ public class TestService {
 
 
 
-
     public List<Map<String, Object>> aggregateErrorsByFullDateAndMode(String userId) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
         ApiFuture<QuerySnapshot> future = dbFirestore.collection("tests")
@@ -413,7 +402,7 @@ public class TestService {
                 .get();
 
         List<QueryDocumentSnapshot> testDocuments = future.get().getDocuments();
-        Map<String, Map<String, Map<String, Object>>> dailyAggregatedResults = new HashMap<>();
+        Map<String, Map<String, Object>> dailyAggregatedResults = new HashMap<>();
 
         if (testDocuments.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No tests found for the provided user ID: " + userId);
@@ -431,25 +420,8 @@ public class TestService {
 
                 int commissionErrors = 0;
                 int omissionErrors = 0;
-                int targetStimuli = 0;
-                int nonTargetStimuli = 0;
 
                 for (Map<String, Object> game : gamesInTest) {
-                    String stimuli = (String) game.get("stimuli");
-                    List<String> shownImages = (List<String>) game.get("shownImages");
-
-                    if (shownImages != null && stimuli != null) {
-                        if ("mode1".equals(testMode)) {
-                            int targetCount = Collections.frequency(shownImages, stimuli);
-                            targetStimuli += targetCount;
-                            nonTargetStimuli += shownImages.size() - targetCount;
-                        } else if ("mode2".equals(testMode)) {
-                            int nonTargetCount = Collections.frequency(shownImages, stimuli);
-                            nonTargetStimuli += nonTargetCount;
-                            targetStimuli += shownImages.size() - nonTargetCount;
-                        }
-                    }
-
                     commissionErrors += ((Long) game.get("commissionErrors")).intValue();
                     omissionErrors += ((Long) game.get("omissionErrors")).intValue();
                 }
@@ -460,31 +432,36 @@ public class TestService {
                             Instant.ofEpochSecond(gameTimestamp.getSeconds(), gameTimestamp.getNanos()), zoneId);
                     String fullDate = zonedDateTime.format(fullDateFormatter);
 
-                    Map<String, Map<String, Object>> modeResults = dailyAggregatedResults.getOrDefault(fullDate, new HashMap<>());
-                    Map<String, Object> dailyResult = modeResults.getOrDefault(testMode, new HashMap<>());
+                    Map<String, Object> dailyResult = dailyAggregatedResults.getOrDefault(fullDate, new HashMap<>());
 
                     dailyResult.put("date", fullDate);
                     dailyResult.put("mode", testMode);
                     dailyResult.put("commissions", (int) dailyResult.getOrDefault("commissions", 0) + commissionErrors);
                     dailyResult.put("omissions", (int) dailyResult.getOrDefault("omissions", 0) + omissionErrors);
-                    dailyResult.put("targetStimuli", (int) dailyResult.getOrDefault("targetStimuli", 0) + targetStimuli);
-                    dailyResult.put("nonTargetStimuli", (int) dailyResult.getOrDefault("nonTargetStimuli", 0) + nonTargetStimuli);
 
-                    modeResults.put(testMode, dailyResult);
-                    dailyAggregatedResults.put(fullDate, modeResults);
+                    int testCount = (int) dailyResult.getOrDefault("testCount", 0) + 1;
+                    dailyResult.put("testCount", testCount);
+
+                    if ("mode1".equals(testMode)) {
+                        dailyResult.put("targetStimuli", 36 * testCount);
+                        dailyResult.put("nonTargetStimuli", 324 * testCount);
+                    } else if ("mode2".equals(testMode)) {
+                        dailyResult.put("targetStimuli", 324 * testCount);
+                        dailyResult.put("nonTargetStimuli", 36 * testCount);
+                    }
+
+                    dailyAggregatedResults.put(fullDate, dailyResult);
                 }
             }
         }
 
-        List<Map<String, Object>> aggregatedResults = new ArrayList<>();
-        for (Map<String, Map<String, Object>> modeResults : dailyAggregatedResults.values()) {
-            aggregatedResults.addAll(modeResults.values());
-        }
-
+        List<Map<String, Object>> aggregatedResults = new ArrayList<>(dailyAggregatedResults.values());
         aggregatedResults.sort(Comparator.comparing(result -> result.get("date").toString()));
 
         return aggregatedResults;
     }
+
+
 
 
 }
