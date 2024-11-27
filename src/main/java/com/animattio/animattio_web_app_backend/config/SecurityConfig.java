@@ -42,6 +42,7 @@ public class SecurityConfig {
                                 .requestMatchers("/doctors/get-doctor").permitAll()
                                         .requestMatchers("/doctors/username/**").permitAll()
                                         .requestMatchers("/doctors/update-profile/**").permitAll()
+                                        .requestMatchers("doctors/doctor-exists/**").hasRole("admin")
                                         .requestMatchers("/signin").permitAll()
 //                                .anyRequest().permitAll()
                 )

@@ -51,6 +51,16 @@ public class DoctorService {
         return null;
     }
 
+    public boolean doesDoctorExist(String username) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        ApiFuture<QuerySnapshot> future = dbFirestore.collection("doctors")
+                .whereEqualTo("username", username)
+                .get();
+        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+        return !documents.isEmpty();
+    }
+
+
 
     public void updateDoctorProfile(String username, String email, String password) throws ExecutionException, InterruptedException, FirebaseAuthException {
         Firestore dbFirestore = FirestoreClient.getFirestore();

@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -49,6 +50,18 @@ public class DoctorController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating profile: " + e.getMessage());
         }
     }
+    @PreAuthorize("hasRole('admin')")
+    @GetMapping("/doctor-exists")
+    public ResponseEntity<?> checkIfDoctorExists(@RequestParam String username) {
+        try {
+            boolean exists = doctorService.doesDoctorExist(username);
+            return ResponseEntity.ok(Collections.singletonMap("exists", exists));
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "Error checking doctor existence: " + e.getMessage()));
+        }
+    }
+
 
 
     @GetMapping("/get-doctor")
