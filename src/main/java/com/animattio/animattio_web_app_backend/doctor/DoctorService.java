@@ -3,6 +3,9 @@ package com.animattio.animattio_web_app_backend.doctor;
 import com.animattio.animattio_web_app_backend.patient.Patient;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.UserRecord;
 import com.google.firebase.cloud.FirestoreClient;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +15,11 @@ import java.util.concurrent.ExecutionException;
 
 @Service
 public class DoctorService {
+    private final FirebaseAuth firebaseAuth;
+
+    public DoctorService() {
+        this.firebaseAuth = FirebaseAuth.getInstance();
+    }
 
     public String createDoctor(Doctor doctor) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
@@ -30,6 +38,54 @@ public class DoctorService {
         }
         return null;
     }
+
+    public String getDoctorUsername(String documentId) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        DocumentReference documentReference = dbFirestore.collection("doctors").document(documentId);
+        ApiFuture<DocumentSnapshot> future = documentReference.get();
+        DocumentSnapshot documentSnapshot = future.get();
+
+        if (documentSnapshot.exists()) {
+            return documentSnapshot.getString("username");
+        }
+        return null;
+    }
+
+
+    public void updateDoctorProfile(String username, String email, String password) throws ExecutionException, InterruptedException, FirebaseAuthException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+
+        ApiFuture<QuerySnapshot> query = dbFirestore.collection("doctors")
+                .whereEqualTo("username", username).get();
+
+        List<QueryDocumentSnapshot> documents = query.get().getDocuments();
+
+        if (documents.isEmpty()) {
+            throw new IllegalArgumentException("Doctor not found with username: " + username);
+        }
+
+        String uid = documents.get(0).getId();
+
+        System.out.println("Retrieved UID: " + uid);
+
+        UserRecord.UpdateRequest request = new UserRecord.UpdateRequest(uid);
+
+        if (email != null && !email.isEmpty()) {
+            request.setEmail(email);
+        }
+        if (password != null && !password.isEmpty()) {
+            request.setPassword(password);
+        }
+
+        FirebaseAuth.getInstance().updateUser(request);
+
+        if (email != null && !email.isEmpty()) {
+            documents.get(0).getReference().update("email", email);
+        }
+    }
+
+
+
     public String deleteDoctor(String documentId){
         Firestore dbFirestore = FirestoreClient.getFirestore();
         ApiFuture<WriteResult> writeResult = dbFirestore.collection("doctors").document(documentId).delete();

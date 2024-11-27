@@ -40,6 +40,8 @@ public class SecurityConfig {
                                 .requestMatchers("/doctors/delete-doctor").hasRole("admin")
                                 .requestMatchers("/doctors/get-doctor-list").hasRole("admin")
                                 .requestMatchers("/doctors/get-doctor").permitAll()
+                                        .requestMatchers("/doctors/username/**").permitAll()
+                                        .requestMatchers("/doctors/update-profile/**").permitAll()
                                         .requestMatchers("/signin").permitAll()
 //                                .anyRequest().permitAll()
                 )
