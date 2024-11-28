@@ -44,6 +44,7 @@ public class SecurityConfig {
                                         .requestMatchers("/doctors/update-profile/**").permitAll()
                                         .requestMatchers("doctors/doctor-exists/**").hasRole("admin")
                                         .requestMatchers("/signin").permitAll()
+                                        .requestMatchers("doctors/delete-by-username").hasRole("admin")
 //                                .anyRequest().permitAll()
                 )
                 .sessionManagement(session ->

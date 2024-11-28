@@ -1,5 +1,6 @@
 package com.animattio.animattio_web_app_backend.doctor;
 
+import com.google.firebase.auth.FirebaseAuthException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -60,6 +61,11 @@ public class DoctorController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonMap("error", "Error checking doctor existence: " + e.getMessage()));
         }
+    }
+    @PreAuthorize("hasRole('admin')")
+    @DeleteMapping("/delete-by-username")
+    public String deleteDoctorByUsername(@RequestParam String username) throws ExecutionException, InterruptedException, FirebaseAuthException, FirebaseAuthException {
+        return doctorService.deleteDoctorByUsername(username);
     }
 
 

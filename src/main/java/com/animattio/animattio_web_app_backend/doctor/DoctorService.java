@@ -62,6 +62,34 @@ public class DoctorService {
 
 
 
+    public String deleteDoctorByUsername(String username) throws ExecutionException, InterruptedException, FirebaseAuthException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+
+        ApiFuture<QuerySnapshot> queryFuture = dbFirestore.collection("doctors")
+                .whereEqualTo("username", username)
+                .get();
+
+        QuerySnapshot querySnapshot = queryFuture.get();
+
+        if (querySnapshot.isEmpty()) {
+            return "Doctor with username '" + username + "' not found.";
+        }
+
+        for (QueryDocumentSnapshot document : querySnapshot.getDocuments()) {
+            String uid = document.getId();
+
+            document.getReference().delete();
+
+            FirebaseAuth.getInstance().deleteUser(uid);
+        }
+
+        return "Doctor with username '" + username + "' deleted successfully.";
+    }
+
+
+
+
+
     public void updateDoctorProfile(String username, String email, String password) throws ExecutionException, InterruptedException, FirebaseAuthException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
 
