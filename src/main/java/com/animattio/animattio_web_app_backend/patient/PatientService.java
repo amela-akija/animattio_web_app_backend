@@ -2,6 +2,8 @@ package com.animattio.animattio_web_app_backend.patient;
 
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.cloud.FirestoreClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -275,6 +277,30 @@ public class PatientService {
         ApiFuture<DocumentSnapshot> future = dbFirestore.collection("patients").document(username).get();
         DocumentSnapshot documentSnapshot = future.get();
         return documentSnapshot.exists();
+    }
+
+    public String deletePatientByUsername(String username) throws ExecutionException, InterruptedException, FirebaseAuthException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+
+        ApiFuture<QuerySnapshot> queryFuture = dbFirestore.collection("patients")
+                .whereEqualTo("patientUsername", username)
+                .get();
+
+        QuerySnapshot querySnapshot = queryFuture.get();
+
+        if (querySnapshot.isEmpty()) {
+            return "Patient with username '" + username + "' not found.";
+        }
+
+        for (QueryDocumentSnapshot document : querySnapshot.getDocuments()) {
+//            String uid = document.getId();
+
+            document.getReference().delete();
+
+//            FirebaseAuth.getInstance().deleteUser(uid);
+        }
+
+        return "Patient with username '" + username + "' deleted successfully.";
     }
 
 }
