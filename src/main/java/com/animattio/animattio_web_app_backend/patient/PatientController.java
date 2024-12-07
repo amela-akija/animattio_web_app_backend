@@ -44,7 +44,7 @@ public class PatientController {
             return ResponseEntity.ok(Collections.singletonMap("message", "Patient updated successfully"));
         } catch (ExecutionException | InterruptedException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonMap("error", "Error updating patient: " + e.getMessage()));
+                    .body(Collections.singletonMap("error", "Error while updating patient: " + e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Collections.singletonMap("error", e.getMessage()));
