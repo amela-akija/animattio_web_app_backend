@@ -117,9 +117,9 @@ public class DoctorService {
 
         FirebaseAuth.getInstance().updateUser(request);
 
-        if (email != null && !email.isEmpty()) {
-            documents.get(0).getReference().update("email", email);
-        }
+//        if (email != null && !email.isEmpty()) {
+//            documents.get(0).getReference().update("email", email);
+//        }
     }
 
 
