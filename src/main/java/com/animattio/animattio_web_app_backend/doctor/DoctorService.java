@@ -31,6 +31,7 @@ public class DoctorService {
      */
     public String createDoctor(Doctor doctor) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore(); // retrieves a Firestore instance to interact with the database
+        // FirestoreClient is a class provided by the Google Cloud Firestore SDK to interact with a Firestore database in a Java application
         ApiFuture<WriteResult> collectionsApiFuture = dbFirestore.collection("doctors").document(doctor.getUsername()).set(doctor);
         return collectionsApiFuture.get().getUpdateTime().toString(); // once the document is successfully created or updated,
         // it retrieves the timestamp when the document was last modified
@@ -152,7 +153,7 @@ public class DoctorService {
 
         String uid = documents.get(0).getId(); // retrieves the uid of the only document that matches the query  because usernames are unique
         UserRecord.UpdateRequest request = new UserRecord.UpdateRequest(uid);
-
+        // UserRecord.UpdateRequest is a class provided by the Firebase Admin SDK to modify user accounts in Firebase Authentication
         if (email != null && !email.isEmpty()) {
             request.setEmail(email);
         }
@@ -178,7 +179,7 @@ public class DoctorService {
     }
 
     /**
-     * Retrieves all doctors from the Firestore database except those with the "admin" role.
+     * Retrieves all doctors from the Firestore database except user with the "admin" role.
      *
      * @return A list of doctor objects.
      * @throws ExecutionException   If an exception occurs during execution.
@@ -188,13 +189,15 @@ public class DoctorService {
         Firestore dbFirestore = FirestoreClient.getFirestore();
         CollectionReference doctorsCollection = dbFirestore.collection("doctors");
 
-        Query query = doctorsCollection.whereNotEqualTo("role", "admin");
-        ApiFuture<QuerySnapshot> querySnapshot = query.get();
-        List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments();
+        Query query = doctorsCollection.whereNotEqualTo("role", "admin"); // query to filter out documents
+        // where the role field is equal to "admin"
+        ApiFuture<QuerySnapshot> querySnapshot = query.get(); // retrieves a QuerySnapshot containing all matching documents
+        List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments(); // retrieves the list of matching QueryDocumentSnapshot objects
         List<Doctor> doctors = new ArrayList<>();
 
         for (QueryDocumentSnapshot document : documents) {
-            Doctor doctor = document.toObject(Doctor.class);
+            Doctor doctor = document.toObject(Doctor.class); // iterates through the list of documents and converts each
+            // document into a Doctor object using the toObject() method
             doctors.add(doctor);
         }
 
@@ -215,31 +218,34 @@ public class DoctorService {
 
         DocumentReference newUsernameRef = dbFirestore.collection("doctors").document(newUsername);
         ApiFuture<DocumentSnapshot> newUsernameSnapshot = newUsernameRef.get();
-        if (newUsernameSnapshot.get().exists()) {
+        if (newUsernameSnapshot.get().exists()) { // checks if the new username already exists as a document ID in the doctors collection
             return "Username already exists.";
         }
 
         Query query = dbFirestore.collection("doctors")
                 .whereEqualTo("username", currentUsername);
         ApiFuture<QuerySnapshot> querySnapshot = query.get();
-        List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments();
+        List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments(); // searches the doctors collection
+        // for a document where the username field matches currentUsername
 
         if (!documents.isEmpty()) {
             DocumentSnapshot currentDoctorSnapshot = documents.get(0);
             Doctor doctor = currentDoctorSnapshot.toObject(Doctor.class);
-            doctor.setUsername(newUsername);
+            doctor.setUsername(newUsername); // updates the username field of the Doctor object to newUsername
 
             ApiFuture<WriteResult> updateResult = currentDoctorSnapshot.getReference().set(doctor);
+            // writes the updated Doctor object back to Firestore, overwriting the existing document
 
             Query patientQuery = dbFirestore.collection("patients")
-                    .whereEqualTo("doctorUsername", currentUsername);
+                    .whereEqualTo("doctorUsername", currentUsername); // queries the patients collection for all
+            // documents where the doctorUsername field matches currentUsername
 
             ApiFuture<QuerySnapshot> patientQuerySnapshot = patientQuery.get();
             List<QueryDocumentSnapshot> patientDocuments = patientQuerySnapshot.get().getDocuments();
 
             for (QueryDocumentSnapshot patientDoc : patientDocuments) {
                 ApiFuture<WriteResult> updatePatientResult = patientDoc.getReference().update("doctorUsername", newUsername);
-            }
+            } // iterates over each matching patient document and updates the doctorUsername field to newUsername
 
             return "Username updated successfully.";
         } else {
