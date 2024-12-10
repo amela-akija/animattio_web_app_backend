@@ -1,5 +1,5 @@
+// not used
 package com.animattio.animattio_web_app_backend.authentication;
-
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import com.google.firebase.auth.FirebaseAuthException;
