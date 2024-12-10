@@ -3,20 +3,75 @@ package com.animattio.animattio_web_app_backend.game;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Represents a game object in the system.
+ * This class stores information about a game session, including error counts,
+ * reaction times, shown images, and game-specific metadata.
+ */
 public class Game {
+
+    /**
+     * The number of commission errors during the game.
+     */
     private int comissionErrors;
+
+    /**
+     * The hit rate (percentage of correct responses) in the game.
+     */
     private int hitRate;
+
+    /**
+     * The unique identifier for the game.
+     */
     private String id;
+
+    /**
+     * The number of omission errors during the game.
+     */
     private int omissionErrors;
+
+    /**
+     * List of intervals used in the game.
+     */
     private List<Integer> intervals;
+
+    /**
+     * List of reaction times recorded during the game.
+     */
     private List<Integer> reactionTimes;
+
+    /**
+     * List of images shown during the game.
+     */
     private List<String> shownImages;
+
+    /**
+     * List of boolean results indicating correctness for each attempt.
+     * True represents a correct response, and false represents an incorrect one.
+     */
     private List<Boolean> result;
+
+    /**
+     * The mode of the game.
+     */
     private String mode;
+
+    /**
+     * The target stimulus used in the game.
+     */
     private String stimuli;
+
+    /**
+     * The theme of the game.
+     */
     private String theme;
+
+    /**
+     * The timestamp indicating when the game session occurred.
+     */
     private Date timestamp;
 
+    // Getters and Setters
     public int getComissionErrors() {
         return comissionErrors;
     }
