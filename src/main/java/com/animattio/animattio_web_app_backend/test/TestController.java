@@ -10,16 +10,31 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-
+/**
+ * Controller for managing and processing test-related operations.
+ */
 @RestController
 @RequestMapping("/tests")
 public class TestController {
     private final TestService testService;
-
+    /**
+     * Constructs a new instance of TestController with the given service.
+     *
+     * @param testService The service layer for test-related operations.
+     */
     public TestController(TestService testService) {
         this.testService = testService;
     }
 
+    /**
+     * Retrieves a specific test document by its ID.
+     *
+     * @param documentId The ID of the test document.
+     * @return The test object if found.
+     * @throws ExecutionException If an error occurs during Firestore query execution.
+     * @throws InterruptedException If the thread is interrupted while waiting for the Firestore query to complete.
+     * @throws ResourceNotFoundException If the test is not found.
+     */
     @GetMapping("/tests/{documentId}")
     public Test getTest(@PathVariable String documentId) throws ExecutionException, InterruptedException {
         Test test = testService.getTest(documentId);
@@ -30,6 +45,12 @@ public class TestController {
         }
     }
 
+    /**
+     * Retrieves all tests for a given user ID.
+     *
+     * @param userId The ID of the user whose tests are to be retrieved.
+     * @return A response entity containing the list of tests or an error message.
+     */
     @GetMapping("/get-all-tests")
     public ResponseEntity<?> getAllPatients(@RequestParam String userId) {
         try {
@@ -46,6 +67,12 @@ public class TestController {
         }
     }
 
+    /**
+     * Retrieves the summed errors for a user's tests.
+     *
+     * @param userId The ID of the user whose tests' errors are to be summed.
+     * @return A response entity containing the list of summed errors by mode.
+     */
     @GetMapping("/summed-errors/{userId}")
     public ResponseEntity<List<Map<String, Object>>> getSummedErrorsForUserTests(@PathVariable String userId) {
         try {
@@ -58,6 +85,12 @@ public class TestController {
         }
     }
 
+    /**
+     * Retrieves processed game data for a specific test.
+     *
+     * @param testId The ID of the test.
+     * @return A response entity containing the processed game data.
+     */
     @GetMapping("/{testId}/processed-games")
     public ResponseEntity<Map<String, List<Long>>> getProcessedGames(@PathVariable String testId) {
         try {
@@ -70,6 +103,12 @@ public class TestController {
         }
     }
 
+    /**
+     * Retrieves the omission errors for a specific test.
+     *
+     * @param testId The ID of the test.
+     * @return A response entity containing the omission errors.
+     */
     @GetMapping("/{testId}/omissions")
     public ResponseEntity<Map<String, Object>> getOmissionErrors(@PathVariable String testId) {
         try {
@@ -82,6 +121,12 @@ public class TestController {
         }
     }
 
+    /**
+     * Retrieves the commission errors for a specific test.
+     *
+     * @param testId The ID of the test.
+     * @return A response entity containing the commission errors.
+     */
     @GetMapping("/{testId}/commissions")
     public ResponseEntity<Map<String, Object>> getCommissionErrors(@PathVariable String testId) {
         try {
@@ -93,6 +138,13 @@ public class TestController {
             return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getReason()));
         }
     }
+
+    /**
+     * Counts the total occurrences of stimuli in a specific test.
+     *
+     * @param testId The ID of the test.
+     * @return A response entity containing the count of stimuli occurrences.
+     */
     @GetMapping("/{testId}/stimuli-count")
     public ResponseEntity<Integer> countTotalStimuliOccurrences(@PathVariable String testId) {
         try {
@@ -104,6 +156,13 @@ public class TestController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+
+    /**
+     * Counts the total occurrences of non-stimuli in a specific test.
+     *
+     * @param testId The ID of the test.
+     * @return A response entity containing the count of non-stimuli occurrences.
+     */
     @GetMapping("/{testId}/non-stimuli-count")
     public ResponseEntity<Integer> countNonStimuliOccurrences(@PathVariable String testId) {
         try {
@@ -115,11 +174,28 @@ public class TestController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+
+    /**
+     * Aggregates errors by month and mode for a specific user's tests.
+     *
+     * @param userId The ID of the user whose tests' errors are to be aggregated.
+     * @return A list of maps containing aggregated errors by month and mode.
+     * @throws ExecutionException If an error occurs during Firestore query execution.
+     * @throws InterruptedException If the thread is interrupted while waiting for the Firestore query to complete.
+     */
     @GetMapping("/aggregate-errors-monthly/{userId}")
     public List<Map<String, Object>> aggregateErrorsByMonthAndMode(@PathVariable String userId) throws ExecutionException, InterruptedException {
         return testService.aggregateErrorsByMonthAndMode(userId);
     }
 
+    /**
+     * Aggregates errors by full date and mode for a specific user's tests.
+     *
+     * @param userId The ID of the user whose tests' errors are to be aggregated.
+     * @return A list of maps containing aggregated errors by full date and mode.
+     * @throws ExecutionException If an error occurs during Firestore query execution.
+     * @throws InterruptedException If the thread is interrupted while waiting for the Firestore query to complete.
+     */
     @GetMapping("/aggregate-errors-daily/{userId}")
     public List<Map<String, Object>> aggregateErrorsByFullDateAndMode(@PathVariable String userId) throws ExecutionException, InterruptedException {
         return testService.aggregateErrorsByFullDateAndMode(userId);

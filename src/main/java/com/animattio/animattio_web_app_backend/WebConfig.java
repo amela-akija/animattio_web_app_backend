@@ -6,10 +6,10 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-public class WebConfig implements WebMvcConfigurer {
+public class WebConfig implements WebMvcConfigurer { //  this interface allows to override methods to customize configurations like CORS
     @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
+    public void addCorsMappings(CorsRegistry registry) { // Configures which domains, HTTP methods, and headers are allowed to access backend
+        registry.addMapping("/**") // Applies the CORS configuration to all endpoints
                 .allowedOrigins("https://frontend-animattio-39d2470d8e0c.herokuapp.com")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*");

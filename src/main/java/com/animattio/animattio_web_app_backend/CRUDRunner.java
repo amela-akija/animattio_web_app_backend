@@ -1,4 +1,5 @@
-package com.animattio.animattio_web_app_backend;
+// not used
+ package com.animattio.animattio_web_app_backend;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
