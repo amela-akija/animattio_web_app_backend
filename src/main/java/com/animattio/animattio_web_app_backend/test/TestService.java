@@ -339,9 +339,20 @@ public class TestService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No tests found for the provided user ID: " + userId);
         }
 
-        int numberOfTests = testDocuments.size();
         ZoneId zoneId = ZoneId.of("UTC+2");
         DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("MM.yyyy");
+
+        Map<String, Integer> modeTestCounts = new HashMap<>();
+
+        for (DocumentSnapshot testDoc : testDocuments) {
+            List<Map<String, Object>> gamesInTest = (List<Map<String, Object>>) testDoc.get("gamesInTest");
+            if (gamesInTest != null && !gamesInTest.isEmpty()) {
+                Map<String, Object> lastGame = gamesInTest.get(gamesInTest.size() - 1);
+                String testMode = (String) lastGame.get("mode");
+
+                modeTestCounts.put(testMode, modeTestCounts.getOrDefault(testMode, 0) + 1);
+            }
+        }
 
         for (DocumentSnapshot testDoc : testDocuments) {
             List<Map<String, Object>> gamesInTest = (List<Map<String, Object>>) testDoc.get("gamesInTest");
@@ -371,12 +382,14 @@ public class TestService {
                     monthlyResult.put("commissions", (int) monthlyResult.getOrDefault("commissions", 0) + commissionErrors);
                     monthlyResult.put("omissions", (int) monthlyResult.getOrDefault("omissions", 0) + omissionErrors);
 
+                    int testCountForMode = modeTestCounts.getOrDefault(testMode, 0);
+
                     if ("mode1".equals(testMode)) {
-                        monthlyResult.put("targetStimuli", 36 * numberOfTests);
-                        monthlyResult.put("nonTargetStimuli", 324 * numberOfTests);
+                        monthlyResult.put("targetStimuli", 36 * testCountForMode);
+                        monthlyResult.put("nonTargetStimuli", 324 * testCountForMode);
                     } else if ("mode2".equals(testMode)) {
-                        monthlyResult.put("targetStimuli", 324 * numberOfTests);
-                        monthlyResult.put("nonTargetStimuli", 36 * numberOfTests);
+                        monthlyResult.put("targetStimuli", 324 * testCountForMode);
+                        monthlyResult.put("nonTargetStimuli", 36 * testCountForMode);
                     }
 
                     modeResults.put(testMode, monthlyResult);
@@ -395,6 +408,7 @@ public class TestService {
 
 
 
+
     public List<Map<String, Object>> aggregateErrorsByFullDateAndMode(String userId) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
         ApiFuture<QuerySnapshot> future = dbFirestore.collection("tests")
@@ -402,7 +416,7 @@ public class TestService {
                 .get();
 
         List<QueryDocumentSnapshot> testDocuments = future.get().getDocuments();
-        Map<String, Map<String, Object>> dailyAggregatedResults = new HashMap<>();
+        Map<String, Map<String, Map<String, Object>>> dailyAggregatedResults = new HashMap<>();
 
         if (testDocuments.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No tests found for the provided user ID: " + userId);
@@ -432,7 +446,8 @@ public class TestService {
                             Instant.ofEpochSecond(gameTimestamp.getSeconds(), gameTimestamp.getNanos()), zoneId);
                     String fullDate = zonedDateTime.format(fullDateFormatter);
 
-                    Map<String, Object> dailyResult = dailyAggregatedResults.getOrDefault(fullDate, new HashMap<>());
+                    Map<String, Map<String, Object>> modeResults = dailyAggregatedResults.getOrDefault(fullDate, new HashMap<>());
+                    Map<String, Object> dailyResult = modeResults.getOrDefault(testMode, new HashMap<>());
 
                     dailyResult.put("date", fullDate);
                     dailyResult.put("mode", testMode);
@@ -450,16 +465,22 @@ public class TestService {
                         dailyResult.put("nonTargetStimuli", 36 * testCount);
                     }
 
-                    dailyAggregatedResults.put(fullDate, dailyResult);
+                    modeResults.put(testMode, dailyResult);
+                    dailyAggregatedResults.put(fullDate, modeResults);
                 }
             }
         }
 
-        List<Map<String, Object>> aggregatedResults = new ArrayList<>(dailyAggregatedResults.values());
+        List<Map<String, Object>> aggregatedResults = new ArrayList<>();
+        for (Map<String, Map<String, Object>> modeResults : dailyAggregatedResults.values()) {
+            aggregatedResults.addAll(modeResults.values());
+        }
+
         aggregatedResults.sort(Comparator.comparing(result -> result.get("date").toString()));
 
         return aggregatedResults;
     }
+
 
 
 
