@@ -4,9 +4,9 @@ A RESTful API for managing and analysing patient data. Built with Spring Boot
 
 ---
 
-## 🚀 Features
+## Features
 
-- ✅ User authentication 
-- ✅ Role-based access control
-- ✅ CRUD operations for users and resources
+-  User authentication 
+-  Role-based access control
+-  CRUD operations for users and resources
 ---
